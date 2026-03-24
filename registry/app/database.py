@@ -3,7 +3,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./colabbot.db")
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./colabbot.db"
 
 # SQLite needs check_same_thread=False for multi-threaded FastAPI
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
