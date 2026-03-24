@@ -1,12 +1,26 @@
 services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    depends_on:
+      - registry
+    restart: unless-stopped
+
   registry:
     build: .
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
+    env_file: .env
     environment:
-      - DATABASE_URL=postgresql://colabbot:colabbot@db:5432/colabbot
-      - OFFLINE_THRESHOLD_SECONDS=90
-      - CORS_ORIGINS=*
+      - DATABASE_URL=postgresql://colabbot:${DB_PASSWORD:-colabbot}@db:5432/colabbot
     depends_on:
       db:
         condition: service_healthy
@@ -16,7 +30,7 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: colabbot
-      POSTGRES_PASSWORD: colabbot
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-colabbot}
       POSTGRES_DB: colabbot
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -29,3 +43,6 @@ services:
 
 volumes:
   postgres_data:
+  caddy_data:     # stores Let's Encrypt certificates — persists across restarts
+  caddy_config:
+  caddy_logs:

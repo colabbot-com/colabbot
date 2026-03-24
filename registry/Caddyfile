@@ -1,0 +1,23 @@
+registry.colabbot.com {
+    reverse_proxy registry:8000
+
+    # Stripe webhooks send raw bodies — preserve them
+    request_body {
+        max_size 1MB
+    }
+
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        -Server
+    }
+
+    log {
+        output file /var/log/caddy/registry.log {
+            roll_size 10mb
+            roll_keep 5
+        }
+    }
+}
