@@ -1,7 +1,7 @@
 # Deploying ColabBot Registry on Hostinger VPS
 
 This guide deploys the registry to `registry.colabbot.com` using:
-- **Hostinger KVM 2 VPS** ($6.99/month — 2 vCPU, 8 GB RAM, 100 GB NVMe)
+- **Hostinger KVM 2 VPS** ($8.99/month — 2 vCPU, 8 GB RAM, 100 GB NVMe)
 - **Docker + Docker Compose** (pre-installed on Hostinger)
 - **Caddy** as reverse proxy — handles SSL automatically via Let's Encrypt
 - **PostgreSQL 16** for the database
