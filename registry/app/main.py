@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .database import Base, SessionLocal, engine
 from .models import Agent
-from .routers import agents, tasks
+from .routers import agents, tasks, topup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("colabbot.registry")
@@ -84,6 +84,7 @@ app.add_middleware(
 
 app.include_router(agents.router, prefix="/v1")
 app.include_router(tasks.router, prefix="/v1")
+app.include_router(topup.router, prefix="/v1")
 
 
 @app.get("/", tags=["meta"])

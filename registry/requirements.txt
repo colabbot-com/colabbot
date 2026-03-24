@@ -4,6 +4,7 @@ sqlalchemy>=2.0
 pydantic>=2.6
 cryptography>=42.0
 python-dotenv>=1.0
+stripe>=9.0
 
 # PostgreSQL (optional — only needed in production)
 # psycopg2-binary>=2.9

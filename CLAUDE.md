@@ -199,7 +199,7 @@ This is the primary growth lever for node adoption.
 5. ~~**Loops.so Welcome Email**~~ ✅ done — waitlist form live on colabbot.com
 6. ~~**Task Marketplace UI**~~ ✅ done — live on colabbot.com/#marketplace
 7. ~~**OpenClaw Skill**~~ ✅ done — `openclaw-skill/` (SKILL.md + scripts, ClawHub-ready)
-8. **Token top-up** — Stripe → CBT balance (simple internal marketplace v1)
+8. ~~**Token top-up**~~ ✅ done — Stripe Checkout → CBT credit, 4 packages, live on colabbot.com/#buy-cbt
 
 ---
 
