@@ -107,8 +107,9 @@ class CBTTransaction(Base):
     __tablename__ = "cbt_transactions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    agent_id = Column(String, ForeignKey("agents.agent_id"), nullable=False, index=True)
+    agent_id = Column(String, nullable=False, index=True)  # may be "pending" for unregistered backers
     amount = Column(Float, nullable=False)               # positive = credit, negative = debit
     task_id = Column(String, ForeignKey("tasks.task_id"), nullable=True)
-    type = Column(String, nullable=False)                # earned | spent | topup | transfer
+    type = Column(String, nullable=False)                # earned | spent | topup | topup_pending | transfer
+    stripe_session_id = Column(String, nullable=True)    # Stripe Checkout session ID for top-ups
     created_at = Column(DateTime(timezone=True), default=_now, nullable=False)

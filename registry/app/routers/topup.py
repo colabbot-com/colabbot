@@ -25,20 +25,21 @@ router = APIRouter(prefix="/topup", tags=["topup"])
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
-CBT_PER_USD = float(os.getenv("CBT_PER_USD", "10"))          # 1 USD = 10 CBT
-SUCCESS_URL = os.getenv("TOPUP_SUCCESS_URL", "https://colabbot.com/?topup=success")
-CANCEL_URL  = os.getenv("TOPUP_CANCEL_URL",  "https://colabbot.com/?topup=cancelled")
+SUCCESS_URL  = os.getenv("TOPUP_SUCCESS_URL", "https://colabbot.com/?topup=success")
+CANCEL_URL   = os.getenv("TOPUP_CANCEL_URL",  "https://colabbot.com/?topup=cancelled")
+CBT_PER_USD  = float(os.getenv("CBT_PER_USD", "10"))
 
 
 # ---------------------------------------------------------------------------
-# Packages
+# Founder Backer Packages
+# ~70% off future regular pricing — see TOKENOMICS.md for rationale
 # ---------------------------------------------------------------------------
 
 PACKAGES = [
-    {"id": "starter",    "cbt": 100,   "usd_cents": 1000,  "label": "Starter",    "popular": False},
-    {"id": "builder",    "cbt": 500,   "usd_cents": 4500,  "label": "Builder",    "popular": True},
-    {"id": "pro",        "cbt": 1200,  "usd_cents": 9900,  "label": "Pro",        "popular": False},
-    {"id": "enterprise", "cbt": 5000,  "usd_cents": 39900, "label": "Enterprise", "popular": False},
+    {"id": "explorer",  "cbt": 500,   "usd_cents": 499,   "label": "Explorer",      "popular": False},
+    {"id": "builder",   "cbt": 2000,  "usd_cents": 1499,  "label": "Builder",       "popular": True},
+    {"id": "operator",  "cbt": 10000, "usd_cents": 4999,  "label": "Operator",      "popular": False},
+    {"id": "founding",  "cbt": 50000, "usd_cents": 19999, "label": "Founding Node", "popular": False},
 ]
 
 
@@ -57,14 +58,22 @@ def list_packages():
 
 class CheckoutRequest(BaseModel):
     package_id: str = Field(description="Package ID from GET /topup/packages")
+    agent_id: str | None = Field(
+        default=None,
+        description="Optional: existing agent ID to credit CBT to immediately. "
+                    "If omitted, CBT is held as a pending balance until agent registers.",
+    )
 
 
 @router.post("/checkout", status_code=status.HTTP_201_CREATED)
 def create_checkout(
     body: CheckoutRequest,
     db: Session = Depends(get_db),
-    current_agent: Agent = Depends(get_current_agent),
 ):
+    """
+    Create a Stripe Checkout session. No authentication required — open to founders
+    and backers who may not yet have a registered agent.
+    """
     if not stripe.api_key:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -78,6 +87,13 @@ def create_checkout(
             detail=f"Unknown package '{body.package_id}'. See GET /topup/packages.",
         )
 
+    agent_id = body.agent_id or "pending"
+    description = (
+        f"{pkg['cbt']} CBT credited to agent {agent_id}"
+        if agent_id != "pending"
+        else f"{pkg['cbt']} CBT — will be credited when you register your agent"
+    )
+
     try:
         session = stripe.checkout.Session.create(
             mode="payment",
@@ -87,23 +103,23 @@ def create_checkout(
                         "currency": "usd",
                         "unit_amount": pkg["usd_cents"],
                         "product_data": {
-                            "name": f"ColabToken (CBT) — {pkg['label']} Pack",
-                            "description": f"{pkg['cbt']} CBT credited to agent {current_agent.agent_id}",
+                            "name": f"ColabToken (CBT) — {pkg['label']} Founder Pack",
+                            "description": description,
                         },
                     },
                     "quantity": 1,
                 }
             ],
             metadata={
-                "agent_id": current_agent.agent_id,
+                "agent_id": agent_id,
                 "cbt_amount": str(pkg["cbt"]),
                 "package_id": pkg["id"],
             },
-            success_url=SUCCESS_URL + f"&agent={current_agent.agent_id}&cbt={pkg['cbt']}",
+            success_url=SUCCESS_URL + f"&agent={agent_id}&cbt={pkg['cbt']}",
             cancel_url=CANCEL_URL,
         )
     except stripe.StripeError as e:
-        log.error("Stripe error for agent %s: %s", current_agent.agent_id, e)
+        log.error("Stripe error for agent %s: %s", agent_id, e)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e))
 
     return {
@@ -145,9 +161,35 @@ async def stripe_webhook(
             log.warning("Webhook: missing metadata in session %s", session.get("id"))
             return {"ok": True}
 
+        if agent_id == "pending":
+            # Founder backer without an agent yet — store as pending transaction.
+            # CBT will be credited when the backer registers their agent and claims
+            # the balance via POST /v1/topup/claim (to be implemented).
+            tx = CBTTransaction(
+                agent_id="pending",
+                amount=cbt_amount,
+                task_id=None,
+                type="topup_pending",
+                stripe_session_id=session.get("id"),
+            )
+            db.add(tx)
+            db.commit()
+            log.info("Pending top-up: %s CBT, session %s (no agent yet)", cbt_amount, session.get("id"))
+            return {"ok": True}
+
         agent = db.query(Agent).filter(Agent.agent_id == agent_id).first()
         if not agent:
-            log.warning("Webhook: agent %s not found", agent_id)
+            # Agent ID provided but not found — store as pending so CBT is not lost
+            tx = CBTTransaction(
+                agent_id=agent_id,
+                amount=cbt_amount,
+                task_id=None,
+                type="topup_pending",
+                stripe_session_id=session.get("id"),
+            )
+            db.add(tx)
+            db.commit()
+            log.warning("Webhook: agent %s not found, stored as pending top-up", agent_id)
             return {"ok": True}
 
         agent.cbt_balance += cbt_amount
@@ -156,6 +198,7 @@ async def stripe_webhook(
             amount=cbt_amount,
             task_id=None,
             type="topup",
+            stripe_session_id=session.get("id"),
         )
         db.add(tx)
         db.commit()

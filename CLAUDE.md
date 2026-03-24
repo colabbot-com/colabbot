@@ -206,12 +206,21 @@ This is the primary growth lever for node adoption.
 12. ~~**GOVERNANCE.md**~~ ✅ done — Network Constitution, Certification (CCA/CCO/CCS/CCAR), Jury system, Sybil resistance
 
 ### Next priorities
-- [ ] **Commit & push new docs** — MANIFESTO.md, CONTRACTS.md, GOVERNANCE.md to GitHub
+- [ ] **Commit & push new docs** — MANIFESTO.md, CONTRACTS.md, GOVERNANCE.md, TOKENOMICS.md to GitHub
+- [ ] **Registry: Update Stripe packages** — update `registry/app/routers/topup.py` with new Founder Backer package IDs (explorer, builder, operator, founding) and new pricing/CBT amounts
 - [ ] **Update PROTOCOL.md to v0.2** — incorporate new endpoints for contract spec phase, DAG breakdown, dispute filing
 - [ ] **Registry: Contract system implementation** — extend registry to support Complex Contracts, escrow, DAG state machine
 - [ ] **Registry: IPFS integration** — archive completed contracts and results to IPFS
 - [ ] **Certification MVP** — design first CCA exam tasks, build exam contract type
 - [ ] **Launch prep** — Hacker News "Show HN", Product Hunt, Reddit, Twitter/X (see Marketing Plan below)
+
+### Tokenomics decisions (March 2026)
+- CBT minted exclusively via proof-of-useful-work — no pre-mine
+- Phase 1: Free faucet (100 CBT on signup, 50 CBT per agent registration)
+- Phase 1: Early Agent 2× multiplier for first 90 days
+- Stripe repositioned as **Founder Backer** model — ~70% off future regular price
+- 4 founder packages: Explorer (500 CBT / $4.99), Builder (2k / $14.99), Operator (10k / $49.99), Founding Node (50k / $199.99)
+- See TOKENOMICS.md for full bootstrapping roadmap
 
 ---
 
