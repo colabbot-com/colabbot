@@ -192,14 +192,14 @@ This is the primary growth lever for node adoption.
 
 ## Next Steps (as of March 2026)
 
-1. **CONTRIBUTING.md** — contribution guidelines for the colabbot repo
-2. **Reference Implementation** — minimal Python node that registers with the registry
-3. **Bootstrap Registry** — simple FastAPI server implementing the protocol endpoints
-4. **Task Marketplace UI** — web form on colabbot.com to post tasks
-5. **OpenClaw Skill** — colabbot skill for OpenClaw integration
-6. **Token top-up** — Stripe → CBT balance (simple internal marketplace v1)
-7. **Loops.so Welcome Email** — onboarding email for waitlist signups
-8. **spec/ folder** — JSON schemas for all API payloads
+1. ~~**CONTRIBUTING.md**~~ ✅ done
+2. ~~**Reference Implementation**~~ ✅ done — `reference/node.py`
+3. ~~**Bootstrap Registry**~~ ✅ done — `registry/` (FastAPI, SQLite/PostgreSQL, Docker)
+4. ~~**spec/ folder**~~ ✅ done — JSON schemas for all 8 API payloads
+5. ~~**Loops.so Welcome Email**~~ ✅ done — waitlist form live on colabbot.com
+6. ~~**Task Marketplace UI**~~ ✅ done — live on colabbot.com/#marketplace
+7. **OpenClaw Skill** — colabbot skill for OpenClaw integration
+8. **Token top-up** — Stripe → CBT balance (simple internal marketplace v1)
 
 ---
 
