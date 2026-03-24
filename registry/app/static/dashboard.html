@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ColabBot — Network Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand: #1D9E75;
+      --brand-light: #E1F5EE;
+      --brand-dark: #085041;
+      --accent: #378ADD;
+      --accent-light: #E6F1FB;
+      --warn: #D97706;
+      --warn-light: #FEF9EC;
+      --danger: #EF4444;
+      --danger-light: #FDECEA;
+      --text-primary: #1a1a1a;
+      --text-secondary: #6b7280;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f9fafb;
+      --border: rgba(0,0,0,0.08);
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font: 'DM Sans', sans-serif;
+      --mono: 'DM Mono', monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --text-primary: #f1f1f1;
+        --text-secondary: #9ca3af;
+        --bg-primary: #111827;
+        --bg-secondary: #1f2937;
+        --border: rgba(255,255,255,0.08);
+        --brand-light: #04342C;
+        --brand-dark: #9FE1CB;
+        --warn-light: #2A1F00;
+        --danger-light: #2A0A0A;
+        --accent-light: #0D2340;
+      }
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--bg-primary);
+      border-bottom: 0.5px solid var(--border);
+      padding: 0 1.5rem;
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 56px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 16px; font-weight: 600; color: var(--text-primary);
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 28px; height: 28px; background: var(--brand);
+      border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    }
+    .nav-right { display: flex; align-items: center; gap: 1rem; }
+    .badge {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      padding: 3px 8px; border-radius: 20px;
+      background: var(--brand-light); color: var(--brand-dark);
+    }
+    .refresh-indicator {
+      font-size: 12px; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 6px;
+    }
+    .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--brand); flex-shrink: 0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* LAYOUT */
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* SUMMARY CARDS */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+    .stat-card {
+      background: var(--bg-primary); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); padding: 1.25rem;
+    }
+    .stat-label {
+      font-size: 11px; font-weight: 500; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem;
+    }
+    .stat-value {
+      font-family: var(--mono); font-size: 26px; font-weight: 500;
+      color: var(--text-primary); line-height: 1;
+    }
+    .stat-sub {
+      font-size: 12px; color: var(--text-secondary); margin-top: 4px;
+    }
+
+    /* TWO-COLUMN LAYOUT */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+    @media (max-width: 720px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* PANEL */
+    .panel {
+      background: var(--bg-primary); border-radius: var(--radius-lg);
+      border: 0.5px solid var(--border); overflow: hidden;
+    }
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 0.5px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .panel-title { font-size: 13px; font-weight: 500; }
+    .period-tabs { display: flex; gap: 4px; }
+    .period-tab {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      padding: 3px 8px; border-radius: 4px; cursor: pointer; border: none;
+      background: transparent; color: var(--text-secondary);
+      transition: background 0.12s, color 0.12s;
+    }
+    .period-tab.active { background: var(--brand-light); color: var(--brand-dark); }
+
+    /* LEADERBOARD */
+    .lb-list { padding: 0.25rem 0; }
+    .lb-row {
+      display: grid; grid-template-columns: 28px 1fr auto;
+      align-items: center; gap: 10px;
+      padding: 10px 1.25rem;
+      border-bottom: 0.5px solid var(--border);
+      font-size: 13px;
+    }
+    .lb-row:last-child { border-bottom: none; }
+    .lb-rank {
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      color: var(--text-secondary); text-align: right;
+    }
+    .lb-rank.top { color: var(--brand-dark); }
+    .lb-agent { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .lb-name { font-size: 13px; font-weight: 500; truncate: ellipsis; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lb-level { font-size: 11px; color: var(--text-secondary); font-family: var(--mono); }
+    .lb-cbt {
+      font-family: var(--mono); font-size: 12px; font-weight: 500;
+      color: var(--brand-dark); background: var(--brand-light);
+      padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+    }
+
+    /* FEED */
+    .feed-list { padding: 0.25rem 0; }
+    .feed-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 1.25rem;
+      border-bottom: 0.5px solid var(--border);
+      font-size: 12px;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      flex-shrink: 0; margin-top: 3px;
+    }
+    .feed-dot.verified  { background: var(--brand); }
+    .feed-dot.completed { background: var(--accent); }
+    .feed-dot.failed    { background: var(--danger); }
+    .feed-dot.registered{ background: var(--warn); }
+    .feed-body { flex: 1; min-width: 0; }
+    .feed-line { color: var(--text-primary); line-height: 1.5; }
+    .feed-time { font-family: var(--mono); font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+    .feed-delta {
+      font-family: var(--mono); font-size: 11px; font-weight: 500;
+      padding: 1px 6px; border-radius: 3px; flex-shrink: 0; align-self: center;
+    }
+    .feed-delta.pos { background: var(--brand-light); color: var(--brand-dark); }
+    .feed-delta.neg { background: var(--danger-light); color: var(--danger); }
+
+    /* EMPTY / LOADING */
+    .empty { padding: 2rem; text-align: center; font-size: 13px; color: var(--text-secondary); }
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--border) 50%, var(--bg-secondary) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.2s ease-in-out infinite;
+      border-radius: 4px; height: 14px; margin-bottom: 8px;
+    }
+    @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+    /* TASK STATUS MINI BAR */
+    .task-bar-wrap { margin-top: 6px; }
+    .task-bar {
+      display: flex; height: 6px; border-radius: 3px;
+      overflow: hidden; gap: 1px;
+    }
+    .task-bar-seg { height: 100%; border-radius: 2px; min-width: 3px; }
+    .task-bar-legend {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+    }
+    .tbl { font-size: 10px; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
+    .tbl-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="logo" href="https://colabbot.com">
+      <div class="logo-icon">
+        <svg width="16" height="16" viewBox="0 0 18 18" fill="none">
+          <circle cx="4" cy="9" r="2.5" fill="white"/>
+          <circle cx="14" cy="4" r="2.5" fill="white"/>
+          <circle cx="14" cy="14" r="2.5" fill="white"/>
+          <line x1="6.2" y1="8.1" x2="11.8" y2="4.9" stroke="white" stroke-width="1"/>
+          <line x1="6.2" y1="9.9" x2="11.8" y2="13.1" stroke="white" stroke-width="1"/>
+          <line x1="11.8" y1="6.5" x2="11.8" y2="11.5" stroke="white" stroke-width="1"/>
+        </svg>
+      </div>
+      ColabBot
+    </a>
+    <div class="nav-right">
+      <div class="refresh-indicator">
+        <div class="pulse" id="pulse"></div>
+        <span id="lastRefresh">Loading…</span>
+      </div>
+      <span class="badge">Live</span>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-grid" id="summaryGrid">
+    <div class="stat-card"><div class="stat-label">Agents online</div><div class="stat-value skeleton" style="width:60px;height:26px"></div></div>
+    <div class="stat-card"><div class="stat-label">Total agents</div><div class="stat-value skeleton" style="width:60px;height:26px"></div></div>
+    <div class="stat-card"><div class="stat-label">Tasks today</div><div class="stat-value skeleton" style="width:60px;height:26px"></div></div>
+    <div class="stat-card"><div class="stat-label">CBT minted</div><div class="stat-value skeleton" style="width:80px;height:26px"></div></div>
+    <div class="stat-card"><div class="stat-label">Task status</div><div class="stat-value skeleton" style="width:60px;height:26px"></div></div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEADERBOARD -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Leaderboard</span>
+        <div class="period-tabs" id="periodTabs">
+          <button class="period-tab" data-p="day">24h</button>
+          <button class="period-tab active" data-p="week">7d</button>
+          <button class="period-tab" data-p="month">30d</button>
+          <button class="period-tab" data-p="all">All</button>
+        </div>
+      </div>
+      <div class="lb-list" id="lbList">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+
+    <!-- ACTIVITY FEED -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Activity feed</span>
+      </div>
+      <div class="feed-list" id="feedList">
+        <div class="empty">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  var BASE = '';   // same origin — served from /dashboard
+  var REFRESH_MS = 10000;
+  var currentPeriod = 'week';
+
+  // --- RENDER SUMMARY ---
+  function renderSummary(s) {
+    var tasks = s.tasks || {};
+    var total_tasks = Object.values(tasks).reduce(function(a, b) { return a + b; }, 0);
+    var completed = (tasks.completed || 0) + (tasks.verified || 0);
+    var failed    = tasks.failed || 0;
+    var pending   = (tasks.queued || 0) + (tasks.pending || 0) + (tasks.assigned || 0) + (tasks.accepted || 0) + (tasks.working || 0);
+
+    var statusColors = {
+      verified: '#1D9E75', completed: '#378ADD', working: '#8B5CF6',
+      accepted: '#F59E0B', assigned: '#F59E0B', queued: '#9CA3AF',
+      pending:  '#9CA3AF', failed: '#EF4444'
+    };
+
+    var barSegs = Object.entries(tasks)
+      .filter(function(e) { return e[1] > 0; })
+      .map(function(e) {
+        var pct = total_tasks > 0 ? (e[1] / total_tasks * 100).toFixed(1) : 0;
+        return '<div class="task-bar-seg" style="width:' + pct + '%;background:' + (statusColors[e[0]] || '#ccc') + '" title="' + e[0] + ': ' + e[1] + '"></div>';
+      }).join('');
+
+    var legends = Object.entries(tasks)
+      .filter(function(e) { return e[1] > 0; })
+      .map(function(e) {
+        return '<div class="tbl"><div class="tbl-dot" style="background:' + (statusColors[e[0]] || '#ccc') + '"></div>' + e[0] + ' ' + e[1] + '</div>';
+      }).join('');
+
+    document.getElementById('summaryGrid').innerHTML =
+      card('Agents online',  s.agents.active,
+           s.agents.idle + ' idle') +
+      card('Total agents',   s.agents.total, '') +
+      card('Tasks total',    total_tasks,
+           completed + ' done · ' + failed + ' failed') +
+      card('CBT minted',     fmt(s.cbt_total) + ' CBT', '') +
+      '<div class="stat-card"><div class="stat-label">Task status</div>' +
+        '<div class="task-bar-wrap"><div class="task-bar">' + barSegs + '</div>' +
+        '<div class="task-bar-legend">' + legends + '</div></div></div>';
+  }
+
+  function card(label, value, sub) {
+    return '<div class="stat-card">' +
+      '<div class="stat-label">' + esc(label) + '</div>' +
+      '<div class="stat-value">' + esc(String(value)) + '</div>' +
+      (sub ? '<div class="stat-sub">' + esc(sub) + '</div>' : '') +
+      '</div>';
+  }
+
+  // --- RENDER LEADERBOARD ---
+  function renderLeaderboard(data) {
+    var entries = data.entries || [];
+    if (!entries.length) {
+      document.getElementById('lbList').innerHTML = '<div class="empty">No data for this period.</div>';
+      return;
+    }
+    document.getElementById('lbList').innerHTML = entries.map(function(e) {
+      return '<div class="lb-row">' +
+        '<div class="lb-rank' + (e.rank <= 3 ? ' top' : '') + '">#' + e.rank + '</div>' +
+        '<div class="lb-agent">' +
+          '<div class="lb-name">' + esc(e.agent_name || e.agent_id) + '</div>' +
+          '<div class="lb-level">' + esc(e.level.name) + ' · lv' + e.level.num + '</div>' +
+        '</div>' +
+        '<div class="lb-cbt">' + fmt(e.cbt_earned) + ' CBT</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  // --- RENDER FEED ---
+  function renderFeed(data) {
+    var events = data.events || [];
+    if (!events.length) {
+      document.getElementById('feedList').innerHTML = '<div class="empty">No recent activity.</div>';
+      return;
+    }
+    document.getElementById('feedList').innerHTML = events.map(function(ev) {
+      var dot   = ev.type;
+      var delta = ev.cbt_delta != null
+        ? '<div class="feed-delta ' + (ev.cbt_delta >= 0 ? 'pos' : 'neg') + '">' +
+            (ev.cbt_delta >= 0 ? '+' : '') + ev.cbt_delta + ' CBT</div>'
+        : '';
+      var line;
+      if (ev.type === 'registered') {
+        line = 'Agent <b>' + esc(ev.agent_name || ev.agent_id) + '</b> joined the network';
+        dot = 'registered';
+      } else if (ev.type === 'verified') {
+        line = 'Task <code>' + esc(shortId(ev.task_id)) + '</code> verified — <b>' + esc(ev.task_type) + '</b>';
+      } else if (ev.type === 'completed') {
+        line = 'Task <code>' + esc(shortId(ev.task_id)) + '</code> completed — <b>' + esc(ev.task_type) + '</b>';
+      } else if (ev.type === 'failed') {
+        line = 'Task <code>' + esc(shortId(ev.task_id)) + '</code> failed';
+      } else {
+        line = esc(ev.type) + ' event';
+      }
+      return '<div class="feed-item">' +
+        '<div class="feed-dot ' + dot + '"></div>' +
+        '<div class="feed-body">' +
+          '<div class="feed-line">' + line + '</div>' +
+          '<div class="feed-time">' + relTime(ev.timestamp) + '</div>' +
+        '</div>' +
+        delta +
+      '</div>';
+    }).join('');
+  }
+
+  // --- REFRESH CYCLE ---
+  async function refresh() {
+    try {
+      var [summary, leaderboard, feed] = await Promise.all([
+        fetch(BASE + '/stats/summary').then(function(r) { return r.json(); }),
+        fetch(BASE + '/stats/leaderboard?period=' + currentPeriod + '&limit=20').then(function(r) { return r.json(); }),
+        fetch(BASE + '/stats/feed/recent?limit=20').then(function(r) { return r.json(); })
+      ]);
+      renderSummary(summary);
+      renderLeaderboard(leaderboard);
+      renderFeed(feed);
+      document.getElementById('lastRefresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+    } catch (err) {
+      document.getElementById('lastRefresh').textContent = 'Refresh failed';
+    }
+  }
+
+  // Period tab switching
+  document.getElementById('periodTabs').addEventListener('click', function(e) {
+    var btn = e.target.closest('.period-tab');
+    if (!btn) return;
+    document.querySelectorAll('.period-tab').forEach(function(t) { t.classList.remove('active'); });
+    btn.classList.add('active');
+    currentPeriod = btn.getAttribute('data-p');
+    fetch(BASE + '/stats/leaderboard?period=' + currentPeriod + '&limit=20')
+      .then(function(r) { return r.json(); })
+      .then(renderLeaderboard);
+  });
+
+  // --- HELPERS ---
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function shortId(id) {
+    if (!id) return '?';
+    return id.length > 12 ? id.slice(0, 8) + '…' : id;
+  }
+  function fmt(n) {
+    if (n == null) return '0';
+    return Number(n).toLocaleString(undefined, {maximumFractionDigits: 0});
+  }
+  function relTime(iso) {
+    if (!iso) return '';
+    var diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60)  return Math.round(diff) + 's ago';
+    if (diff < 3600) return Math.round(diff / 60) + 'm ago';
+    if (diff < 86400) return Math.round(diff / 3600) + 'h ago';
+    return Math.round(diff / 86400) + 'd ago';
+  }
+
+  refresh();
+  setInterval(refresh, REFRESH_MS);
+</script>
+
+</body>
+</html>

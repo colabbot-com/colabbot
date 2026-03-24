@@ -14,12 +14,15 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 
+import pathlib
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 
 from .database import Base, SessionLocal, engine
 from .models import Agent
-from .routers import agents, tasks, topup
+from .routers import agents, stats, tasks, topup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("colabbot.registry")
@@ -85,6 +88,7 @@ app.add_middleware(
 app.include_router(agents.router, prefix="/v1")
 app.include_router(tasks.router, prefix="/v1")
 app.include_router(topup.router, prefix="/v1")
+app.include_router(stats.router, prefix="/v1")
 
 
 @app.get("/", tags=["meta"])
@@ -95,6 +99,12 @@ def root():
         "docs": "/docs",
         "spec": "https://github.com/colabbot-com/colabbot/blob/main/PROTOCOL.md",
     }
+
+
+@app.get("/dashboard", response_class=HTMLResponse, include_in_schema=False)
+def dashboard():
+    html_path = pathlib.Path(__file__).parent / "static" / "dashboard.html"
+    return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
 
 
 @app.get("/health", tags=["meta"])
