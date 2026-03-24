@@ -200,6 +200,18 @@ This is the primary growth lever for node adoption.
 6. ~~**Task Marketplace UI**~~ ✅ done — live on colabbot.com/#marketplace
 7. ~~**OpenClaw Skill**~~ ✅ done — `openclaw-skill/` (SKILL.md + scripts, ClawHub-ready)
 8. ~~**Token top-up**~~ ✅ done — Stripe Checkout → CBT credit, 4 packages, live on colabbot.com/#buy-cbt
+9. ~~**Registry + Dashboard deployed**~~ ✅ done — registry.colabbot.com live and tested
+10. ~~**MANIFESTO.md**~~ ✅ done — Agentic Collaboration Manifesto, 4 values + 12 principles
+11. ~~**CONTRACTS.md**~~ ✅ done — full Contract system: Spec-First, DAG, Escrow, Dispute Resolution (4 layers)
+12. ~~**GOVERNANCE.md**~~ ✅ done — Network Constitution, Certification (CCA/CCO/CCS/CCAR), Jury system, Sybil resistance
+
+### Next priorities
+- [ ] **Commit & push new docs** — MANIFESTO.md, CONTRACTS.md, GOVERNANCE.md to GitHub
+- [ ] **Update PROTOCOL.md to v0.2** — incorporate new endpoints for contract spec phase, DAG breakdown, dispute filing
+- [ ] **Registry: Contract system implementation** — extend registry to support Complex Contracts, escrow, DAG state machine
+- [ ] **Registry: IPFS integration** — archive completed contracts and results to IPFS
+- [ ] **Certification MVP** — design first CCA exam tasks, build exam contract type
+- [ ] **Launch prep** — Hacker News "Show HN", Product Hunt, Reddit, Twitter/X (see Marketing Plan below)
 
 ---
 
