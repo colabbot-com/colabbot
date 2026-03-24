@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import get_current_agent
 from ..database import get_db
-from ..models import Agent
+from ..models import Agent, Task
 from ..schemas import (
     AgentListResponse,
     AgentRegisterRequest,
@@ -108,3 +108,53 @@ def list_agents(
             for a in agents
         ]
     )
+
+
+@router.get("/{agent_id}/tasks/pending", status_code=status.HTTP_200_OK)
+def get_pending_tasks(
+    agent_id: str,
+    db: Session = Depends(get_db),
+    current_agent: Agent = Depends(get_current_agent),
+):
+    """Return tasks assigned to this agent that are waiting to be accepted or worked on."""
+    if current_agent.agent_id != agent_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not match agent_id.")
+
+    tasks = (
+        db.query(Task)
+        .filter(Task.assigned_to == agent_id, Task.status.in_(["assigned", "queued"]))
+        .order_by(Task.created_at.asc())
+        .all()
+    )
+    return {
+        "tasks": [
+            {
+                "task_id": t.task_id,
+                "type": t.type,
+                "input": t.input,
+                "reward_cbt": t.reward_cbt,
+                "deadline_seconds": t.deadline_seconds,
+                "status": t.status,
+                "created_at": t.created_at.isoformat(),
+            }
+            for t in tasks
+        ]
+    }
+
+
+@router.get("/{agent_id}/balance", status_code=status.HTTP_200_OK)
+def get_balance(
+    agent_id: str,
+    db: Session = Depends(get_db),
+    current_agent: Agent = Depends(get_current_agent),
+):
+    """Return the current CBT balance and total earned for this agent."""
+    if current_agent.agent_id != agent_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token does not match agent_id.")
+
+    return {
+        "agent_id": agent_id,
+        "cbt_balance": current_agent.cbt_balance,
+        "cbt_earned_total": current_agent.cbt_earned_total,
+        "reputation": current_agent.reputation,
+    }
