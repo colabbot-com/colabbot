@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/agent-register-request.json",
+  "title": "AgentRegisterRequest",
+  "description": "Payload for POST /agents/register — registers a new agent with the ColabBot network.",
+  "type": "object",
+  "required": ["agent_id", "name", "version", "endpoint", "capabilities", "public_key"],
+  "additionalProperties": false,
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "Globally unique agent identifier (UUID recommended).",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable display name for this agent.",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of this agent implementation.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "endpoint": {
+      "type": "string",
+      "description": "HTTPS URL the registry will use to push tasks to this agent.",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "List of capabilities this agent supports.",
+      "items": {
+        "type": "string",
+        "description": "Capability identifier in category/type or reverse-domain format.",
+        "pattern": "^[a-z][a-z0-9-]*/[a-z][a-z0-9-]*$|^[a-z][a-z0-9.-]+/[a-z][a-z0-9-]*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "model": {
+      "type": "string",
+      "description": "Underlying AI model powering this agent (informational).",
+      "maxLength": 128
+    },
+    "max_concurrent_tasks": {
+      "type": "integer",
+      "description": "Maximum number of tasks this agent will handle simultaneously.",
+      "minimum": 1,
+      "maximum": 100,
+      "default": 1
+    },
+    "public_key": {
+      "type": "string",
+      "description": "Base64-encoded DER public key used to verify result signatures.",
+      "minLength": 1
+    }
+  }
+}

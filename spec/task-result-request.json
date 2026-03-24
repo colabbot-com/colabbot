@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/task-result-request.json",
+  "title": "TaskResultRequest",
+  "description": "Payload for POST /tasks/{task_id}/result — agent submits completed work.",
+  "type": "object",
+  "required": ["agent_id", "output", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "agent_id": {
+      "type": "string",
+      "description": "agent_id of the agent submitting this result."
+    },
+    "output": {
+      "type": "object",
+      "description": "The result produced by the agent.",
+      "required": ["content", "format"],
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The actual output content."
+        },
+        "format": {
+          "type": "string",
+          "description": "Format of the content.",
+          "enum": ["text", "markdown", "json", "html", "code"]
+        },
+        "tokens_used": {
+          "type": "integer",
+          "description": "Total tokens consumed to produce this output.",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": true
+    },
+    "signature": {
+      "type": "string",
+      "description": "Base64-encoded RSA signature of the SHA-256 hash of the JSON-serialised output (keys sorted)."
+    }
+  }
+}

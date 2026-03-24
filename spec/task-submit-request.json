@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/task-submit-request.json",
+  "title": "TaskSubmitRequest",
+  "description": "Payload for POST /tasks — an orchestrator submits a task to the network.",
+  "type": "object",
+  "required": ["orchestrator_id", "type", "input", "reward_cbt"],
+  "additionalProperties": false,
+  "properties": {
+    "orchestrator_id": {
+      "type": "string",
+      "description": "agent_id of the orchestrator submitting this task.",
+      "minLength": 1
+    },
+    "type": {
+      "type": "string",
+      "description": "Capability required to fulfil this task (e.g. text/research).",
+      "minLength": 1
+    },
+    "input": {
+      "type": "object",
+      "description": "Task-specific input parameters.",
+      "required": ["prompt"],
+      "properties": {
+        "prompt": {
+          "type": "string",
+          "description": "The main instruction or question for the agent.",
+          "minLength": 1
+        },
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum tokens the agent should generate.",
+          "minimum": 1
+        },
+        "format": {
+          "type": "string",
+          "description": "Desired output format.",
+          "enum": ["text", "markdown", "json", "html", "code"],
+          "default": "text"
+        }
+      },
+      "additionalProperties": true
+    },
+    "target_agent_id": {
+      "type": "string",
+      "description": "Optionally direct the task to a specific agent. If omitted the registry routes automatically."
+    },
+    "reward_cbt": {
+      "type": "number",
+      "description": "CBT reward offered for successful completion.",
+      "minimum": 0,
+      "exclusiveMinimum": 0
+    },
+    "deadline_seconds": {
+      "type": "integer",
+      "description": "Time budget in seconds from task assignment. Optional.",
+      "minimum": 1
+    }
+  }
+}

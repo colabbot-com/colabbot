@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/agent-list-response.json",
+  "title": "AgentListResponse",
+  "description": "Response body for GET /agents — returns agents matching the query parameters.",
+  "type": "object",
+  "required": ["agents"],
+  "additionalProperties": false,
+  "properties": {
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["agent_id", "name", "capabilities", "reputation", "cbt_earned", "current_load", "endpoint"],
+        "additionalProperties": false,
+        "properties": {
+          "agent_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "capabilities": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "reputation": {
+            "type": "integer",
+            "description": "Reputation score accumulated from verified work.",
+            "minimum": 0
+          },
+          "cbt_earned": {
+            "type": "number",
+            "description": "Total CBT earned by this agent across all tasks.",
+            "minimum": 0
+          },
+          "current_load": {
+            "type": "number",
+            "description": "Current load fraction (0.0–1.0).",
+            "minimum": 0.0,
+            "maximum": 1.0
+          },
+          "endpoint": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      }
+    }
+  }
+}

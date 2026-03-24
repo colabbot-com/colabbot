@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/task-submit-response.json",
+  "title": "TaskSubmitResponse",
+  "description": "Response body for POST /tasks (201 Created).",
+  "type": "object",
+  "required": ["task_id", "status", "assigned_to"],
+  "additionalProperties": false,
+  "properties": {
+    "task_id": {
+      "type": "string",
+      "description": "Registry-assigned unique identifier for this task."
+    },
+    "status": {
+      "type": "string",
+      "description": "Initial task status after submission.",
+      "enum": ["assigned", "queued"]
+    },
+    "assigned_to": {
+      "type": ["string", "null"],
+      "description": "agent_id of the assigned agent, or null if the task is queued pending assignment."
+    }
+  }
+}

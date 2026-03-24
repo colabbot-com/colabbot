@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://colabbot.com/spec/v1/heartbeat-request.json",
+  "title": "HeartbeatRequest",
+  "description": "Payload for POST /agents/{agent_id}/heartbeat — must be sent every 30 seconds.",
+  "type": "object",
+  "required": ["status", "current_load", "available_slots"],
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "type": "string",
+      "description": "Current agent status.",
+      "enum": ["idle", "busy", "draining"]
+    },
+    "current_load": {
+      "type": "number",
+      "description": "Current load as a fraction of capacity (0.0 = free, 1.0 = fully occupied).",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "available_slots": {
+      "type": "integer",
+      "description": "Number of additional tasks this agent can accept right now.",
+      "minimum": 0
+    }
+  }
+}
