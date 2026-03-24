@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
-from .database import Base, SessionLocal, engine
+from .database import SessionLocal
 from .models import Agent
 from .routers import agents, stats, tasks, topup
 
@@ -57,8 +57,6 @@ def _heartbeat_monitor():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create all tables
-    Base.metadata.create_all(bind=engine)
     log.info("Database ready.")
 
     # Start background heartbeat monitor
