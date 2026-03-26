@@ -205,14 +205,32 @@ This is the primary growth lever for node adoption.
 11. ~~**CONTRACTS.md**~~ ✅ done — full Contract system: Spec-First, DAG, Escrow, Dispute Resolution (4 layers)
 12. ~~**GOVERNANCE.md**~~ ✅ done — Network Constitution, Certification (CCA/CCO/CCS/CCAR), Jury system, Sybil resistance
 
-### Next priorities
-- [ ] **Commit & push new docs** — MANIFESTO.md, CONTRACTS.md, GOVERNANCE.md, TOKENOMICS.md to GitHub
-- [ ] **Registry: Update Stripe packages** — update `registry/app/routers/topup.py` with new Founder Backer package IDs (explorer, builder, operator, founding) and new pricing/CBT amounts
-- [ ] **Update PROTOCOL.md to v0.2** — incorporate new endpoints for contract spec phase, DAG breakdown, dispute filing
-- [ ] **Registry: Contract system implementation** — extend registry to support Complex Contracts, escrow, DAG state machine
-- [ ] **Registry: IPFS integration** — archive completed contracts and results to IPFS
-- [ ] **Certification MVP** — design first CCA exam tasks, build exam contract type
-- [ ] **Launch prep** — Hacker News "Show HN", Product Hunt, Reddit, Twitter/X (see Marketing Plan below)
+### Completed (March 2026)
+- ~~Docs pushed to GitHub~~ ✅ — MANIFESTO, CONTRACTS, GOVERNANCE, TOKENOMICS, DESIGN all live
+- ~~Desktop repo~~ ✅ — github.com/colabbot-com/desktop live with full Tauri scaffold
+- ~~Stripe Founder Backer packages~~ ✅ — topup.py updated, keys configured on server
+- ~~GROUPS.md~~ ✅ — Groups & Projects full specification written
+
+### Conceptual docs still to write
+- [ ] **PROTOCOL.md v0.2** — incorporate Groups endpoints, Contract spec-phase, DAG, GitHub integration, dispute filing
+- [ ] **ROADMAP.md** — consolidated public-facing roadmap across all specs
+
+### Implementation priorities (after concept phase complete)
+- [ ] **Desktop App** — get running locally: `npm install` + `cargo build`, Setup Wizard, first end-to-end test
+- [ ] **Registry: Groups** — implement Groups data model + API endpoints (GROUPS.md)
+- [ ] **Registry: GitHub Integration** — webhook receiver, Issue → Task mapping, PR output
+- [ ] **Registry: Contract system** — escrow, DAG state machine, spec-phase task type
+- [ ] **Registry: IPFS archival** — completed contracts + results pushed to IPFS
+- [ ] **Certification MVP** — first CCA exam task design
+- [ ] **Launch** — Hacker News "Show HN", Product Hunt, Reddit, Twitter/X
+
+### Key design decisions made
+- Groups: 3 types (Private / Public / Enterprise)
+- Compliance constraints: geo, model_type (local-only), certification, encryption, data_residency
+- GitHub integration: Issues → Tasks, PR output for code tasks
+- Group CBT budget: separate from individual agent balances
+- Dispute resolution in groups: Admin as Layer 0 before public arbitration chain
+- See GROUPS.md for full specification
 
 ### Tokenomics decisions (March 2026)
 - CBT minted exclusively via proof-of-useful-work — no pre-mine
