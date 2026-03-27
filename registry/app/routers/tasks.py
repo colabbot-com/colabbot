@@ -34,6 +34,13 @@ def submit_task(
     if current_agent.agent_id != body.orchestrator_id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="orchestrator_id does not match token.")
 
+    # --- Balance check: orchestrator must be able to cover the reward ---
+    if current_agent.cbt_balance < body.reward_cbt:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"Insufficient CBT balance. Required: {body.reward_cbt}, available: {current_agent.cbt_balance}",
+        )
+
     # Auto-assign: find best available agent for the capability
     assigned_to = body.target_agent_id
     if not assigned_to:
@@ -66,7 +73,17 @@ def submit_task(
     )
     task.input = body.input.model_dump()
 
+    # --- Debit the orchestrator upfront ---
+    current_agent.cbt_balance -= body.reward_cbt
+    debit_tx = CBTTransaction(
+        agent_id=current_agent.agent_id,
+        amount=-body.reward_cbt,
+        task_id=task.task_id,
+        type="spent",
+    )
+
     db.add(task)
+    db.add(debit_tx)
     db.commit()
     db.refresh(task)
 
@@ -168,12 +185,19 @@ def verify_task(
     task.status = "verified"
     task.verified_at = datetime.now(timezone.utc)
 
+    # --- CBT settlement ---
+    # The orchestrator was debited reward_cbt upfront at task submission.
+    # Now we pay the agent and refund any remainder to the orchestrator.
+    orchestrator = db.query(Agent).filter(Agent.agent_id == task.orchestrator_id).first()
+
     cbt_awarded = 0.0
     if body.verdict == "accepted" and body.quality_score >= MIN_QUALITY_SCORE:
         agent = db.query(Agent).filter(Agent.agent_id == task.assigned_to).first()
         if agent:
             reputation_multiplier = 1.0 + (agent.reputation / 1000)
             cbt_awarded = round(task.reward_cbt * body.quality_score * reputation_multiplier, 4)
+            # Cap at the escrowed amount so we never overpay
+            cbt_awarded = min(cbt_awarded, task.reward_cbt)
 
             agent.cbt_balance += cbt_awarded
             agent.cbt_earned_total += cbt_awarded
@@ -187,6 +211,18 @@ def verify_task(
             )
             db.add(tx)
 
+    # Refund the unused portion to the orchestrator
+    refund = round(task.reward_cbt - cbt_awarded, 4)
+    if refund > 0 and orchestrator:
+        orchestrator.cbt_balance += refund
+        refund_tx = CBTTransaction(
+            agent_id=orchestrator.agent_id,
+            amount=refund,
+            task_id=task_id,
+            type="refund",
+        )
+        db.add(refund_tx)
+
     db.commit()
 
     return TaskVerifyResponse(
@@ -194,6 +230,45 @@ def verify_task(
         verdict=body.verdict,
         cbt_awarded=cbt_awarded,
     )
+
+
+@router.post("/{task_id}/cancel", status_code=status.HTTP_200_OK)
+def cancel_task(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_agent: Agent = Depends(get_current_agent),
+):
+    """Cancel a task and refund the full reward to the orchestrator."""
+    task = _get_task(db, task_id)
+
+    if task.orchestrator_id != current_agent.agent_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the orchestrator can cancel this task.")
+
+    if task.status in ("verified", "failed"):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Task is already '{task.status}', cannot cancel.")
+
+    task.status = "failed"
+
+    # Full refund
+    current_agent.cbt_balance += task.reward_cbt
+    refund_tx = CBTTransaction(
+        agent_id=current_agent.agent_id,
+        amount=task.reward_cbt,
+        task_id=task_id,
+        type="refund",
+    )
+    db.add(refund_tx)
+
+    # Free agent slot if task was accepted
+    if task.assigned_to:
+        agent = db.query(Agent).filter(Agent.agent_id == task.assigned_to).first()
+        if agent:
+            agent.available_slots = min(agent.max_concurrent_tasks, agent.available_slots + 1)
+            if agent.available_slots > 0:
+                agent.status = "idle"
+
+    db.commit()
+    return {"ok": True, "refunded_cbt": task.reward_cbt}
 
 
 # ---------------------------------------------------------------------------

@@ -3,6 +3,7 @@ ColabBot Registry — CBT Top-up via Stripe
 ------------------------------------------
 POST /v1/topup/checkout   → Create a Stripe Checkout session
 POST /v1/topup/webhook    → Handle Stripe webhook (credits CBT on payment)
+POST /v1/topup/claim      → Claim pending CBT after agent registration
 GET  /v1/topup/packages   → List available CBT packages (public)
 """
 
@@ -205,3 +206,69 @@ async def stripe_webhook(
         log.info("Topped up %s CBT for agent %s (session %s)", cbt_amount, agent_id, session.get("id"))
 
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Claim pending CBT
+# ---------------------------------------------------------------------------
+
+class ClaimRequest(BaseModel):
+    stripe_session_id: str = Field(
+        description="Stripe Checkout session ID from the original purchase. "
+                    "Used to match the pending transaction.",
+    )
+
+
+@router.post("/claim", status_code=status.HTTP_200_OK)
+def claim_pending_cbt(
+    body: ClaimRequest,
+    db: Session = Depends(get_db),
+    current_agent: Agent = Depends(get_current_agent),
+):
+    """
+    Claim pending CBT from a Founder Backer purchase made before the agent was
+    registered. Requires authentication — the caller's agent receives the CBT.
+    """
+    pending_tx = (
+        db.query(CBTTransaction)
+        .filter(
+            CBTTransaction.stripe_session_id == body.stripe_session_id,
+            CBTTransaction.type == "topup_pending",
+        )
+        .first()
+    )
+
+    if not pending_tx:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No pending top-up found for this session ID. "
+                   "It may have been claimed already or the session ID is invalid.",
+        )
+
+    # Credit the agent
+    current_agent.cbt_balance += pending_tx.amount
+
+    # Record the credited transaction
+    credited_tx = CBTTransaction(
+        agent_id=current_agent.agent_id,
+        amount=pending_tx.amount,
+        task_id=None,
+        type="topup",
+        stripe_session_id=pending_tx.stripe_session_id,
+    )
+    db.add(credited_tx)
+
+    # Remove the pending transaction
+    db.delete(pending_tx)
+    db.commit()
+
+    log.info(
+        "Claimed %s CBT for agent %s (session %s)",
+        pending_tx.amount, current_agent.agent_id, body.stripe_session_id,
+    )
+
+    return {
+        "claimed_cbt": pending_tx.amount,
+        "agent_id": current_agent.agent_id,
+        "new_balance": current_agent.cbt_balance,
+    }
